@@ -398,10 +398,6 @@ class _HomeState extends State<Home> {
                             context.read<MarkerModel>().addMarker(Marker(
                               position: LatLng(currentSellSnapshots.last['coordinates'][0], currentSellSnapshots.last['coordinates'][1]),
                               markerId: MarkerId(const Uuid().v4()),
-                              icon: await BitmapDescriptor.asset(
-                                const ImageConfiguration(size: Size(48, 48)),
-                                'assets/marker-green.png',
-                              ),
                               infoWindow: InfoWindow(
                                 title: currentSellSnapshots.last['name'],
                                 snippet: currentSellSnapshots.last['sellerName'] == '' ? "Tap to message ${currentSellSnapshots.last['buyerName']}" : "Tap to message ${currentSellSnapshots.last['sellerName']}",
@@ -485,21 +481,17 @@ class _HomeState extends State<Home> {
                             context.read<MarkerModel>().addMarker(Marker(
                               position: LatLng(currentBuySnapshots.last['coordinates'][0], currentBuySnapshots.last['coordinates'][1]),
                               markerId: MarkerId(const Uuid().v4()),
-                              icon: await BitmapDescriptor.asset(
-                                const ImageConfiguration(size: Size(48, 48)),
-                                'assets/marker-blue.png',
-                              ),
                               infoWindow: InfoWindow(
-                                  title: currentBuySnapshots.last['name'],
-                                  snippet: currentBuySnapshots.last['sellerName'] == '' ? "Tap to message ${currentBuySnapshots.last['buyerName']}" : "Tap to message ${currentBuySnapshots.last['sellerName']}",
-                                  onTap: () {
-                                    print(currentBuySnapshots.last['sellerId'] == '' ? currentBuySnapshots.last['buyerId'] : currentBuySnapshots.last['sellerId']);
-                                    Navigator.push(context, MaterialPageRoute(builder: (context) => ChatRoom(
-                                        senderName: "${userInfo!['first_name']} ${userInfo!['last_name']}",
-                                        receiverId: currentBuySnapshots.last['sellerId'] == '' ? currentBuySnapshots.last['buyerId'] : currentBuySnapshots.last['sellerId'],
-                                        receiverName: currentBuySnapshots.last['sellerName'] == '' ? currentBuySnapshots.last['buyerName'] : currentBuySnapshots.last['sellerName']))
-                                    );
-                                  }
+                                title: currentBuySnapshots.last['name'],
+                                snippet: currentBuySnapshots.last['sellerName'] == '' ? "Tap to message ${currentBuySnapshots.last['buyerName']}" : "Tap to message ${currentBuySnapshots.last['sellerName']}",
+                                onTap: () {
+                                  print(currentBuySnapshots.last['sellerId'] == '' ? currentBuySnapshots.last['buyerId'] : currentBuySnapshots.last['sellerId']);
+                                  Navigator.push(context, MaterialPageRoute(builder: (context) => ChatRoom(
+                                      senderName: "${userInfo!['first_name']} ${userInfo!['last_name']}",
+                                      receiverId: currentBuySnapshots.last['sellerId'] == '' ? currentBuySnapshots.last['buyerId'] : currentBuySnapshots.last['sellerId'],
+                                      receiverName: currentBuySnapshots.last['sellerName'] == '' ? currentBuySnapshots.last['buyerName'] : currentBuySnapshots.last['sellerName']))
+                                  );
+                                }
                               ),
                             ));
                           });
@@ -533,10 +525,6 @@ class _HomeState extends State<Home> {
                               newMarkers.add(Marker(
                                 position: LatLng(currentSellSnapshot['coordinates'][0], currentSellSnapshot['coordinates'][1]),
                                 markerId: MarkerId(const Uuid().v4()),
-                                icon: await BitmapDescriptor.asset(
-                                  const ImageConfiguration(size: Size(48, 48)),
-                                  'assets/marker-blue.png',
-                                ),
                                 infoWindow: InfoWindow(
                                   title: currentSellSnapshot['name'],
                                   snippet: currentSellSnapshot['sellerName'] == '' ? "Tap to message ${currentSellSnapshot['buyerName']}" : "Tap to message ${currentSellSnapshot['sellerName']}",
