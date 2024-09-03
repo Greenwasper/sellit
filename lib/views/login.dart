@@ -10,6 +10,7 @@ import 'package:sellit/components/password_field.dart';
 import 'package:sellit/components/custom_text.dart';
 import 'package:sellit/views/home.dart';
 import 'package:sellit/components/loader.dart';
+import 'package:sellit/views/register.dart';
 
 class Login extends StatefulWidget {
 
@@ -84,110 +85,150 @@ class _LoginState extends State<Login> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        resizeToAvoidBottomInset: false,
-        body: Stack(
-          children: [
-            Stack(
-              children: [
-                Positioned(
-                  top: 0,
-                  child: Image.asset('assets/edge2.png', fit: BoxFit.cover),
+      body: Stack(
+        children: [
+          Stack(
+            children: [
+              Container(
+                height: double.infinity,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                        colors: [
+                          primaryColor,
+                          secondaryColor
+                        ]
+                    )
                 ),
-                Positioned(
-                  bottom: -40,
-                  child: Image.asset('assets/edge.png', fit: BoxFit.cover),
+                child: const Padding(
+                  padding: EdgeInsets.only(top: 70, left: 20),
+                  child: CustomText(text: 'Welcome', color: Colors.white, fontSize: 40),
                 ),
-                Container(
-                    height: double.infinity,
-                    width: double.infinity,
-                    color: Colors.transparent,
-                    child: Center(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 30),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const SizedBox(height: 20),
-                              const CustomText(text: "Login", fontSize: 31, color: Colors.blue),
-                              const SizedBox(height: 30),
-                              // IntlField(controller: _phoneNumber),
-                              Field(
-                                controller: _email,
-                                textInputType: TextInputType.emailAddress,
-                                labelText: "Email",
-                              ),
-                              const SizedBox(height: 20),
-                              PasswordField(
-                                controller: _password,
-                                passwordObscured: passwordObscured,
-                                setPasswordObscured: setPasswordObscured,
-                              ),
-                              const SizedBox(height: 20),
-                              InkWell(
-                                onTap: () async {
-                                  login();
-                                },
-                                child: Container(
-                                  height: 55,
-                                  width: double.infinity,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(7),
-                                    gradient: LinearGradient(
-                                      colors: [
-                                        primaryColor,
-                                        secondaryColor
-                                      ]
-                                    )
-                                  ),
-                                  child: const Center(
-                                    child: CustomText(text: "Login", color: Colors.white, fontSize: 17),
-                                  )
-                                ),
-                              ),
-                              const SizedBox(height: 20),
-                              const Row(
-                                children: [
-                                  Expanded(
-                                    child: Divider(),
-                                  ),
-                                  Padding(
-                                    padding: EdgeInsets.symmetric(horizontal: 10),
-                                    child: CustomText(text: "Don't have an account?"),
-                                  ),
-                                  Expanded(
-                                    child: Divider(),
-                                  )
-                                ],
-                              ),
-                              const SizedBox(height: 10),
-                              Center(
-                                child: ElevatedButton(
+              ),
+              Padding(
+                padding: const EdgeInsets.only(top: 200),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  height: double.infinity,
+                  width: double.infinity,
+                  decoration: const BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(40),
+                        topRight: Radius.circular(40),
+                      )
+                  ),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 50),
+                        Image.asset('assets/sellit.png', width: 100),
+                        const SizedBox(height: 20),
+                        Column(
+                          children: [
+                            TextField(
+                              controller: _email,
+                              decoration: const InputDecoration(labelText: 'Email'),
+                            ),
+                            const SizedBox(height: 20),
+                            TextField(
+                              controller: _password,
+                              obscureText: passwordObscured,
+                              autocorrect: false,
+                              enableSuggestions: false,
+                              decoration: InputDecoration(
+                                suffix: IconButton(
                                   onPressed: () {
-
+                                    if(passwordObscured){
+                                      setState(() {
+                                        passwordObscured = false;
+                                      });
+                                    } else {
+                                      setState(() {
+                                        passwordObscured = true;
+                                      });
+                                    }
                                   },
-                                  style: ElevatedButton.styleFrom(
-                                    elevation: 0,
-                                    backgroundColor: Colors.white,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(7),
-                                      side: const BorderSide(color: Colors.grey, width: 2.0),
-                                    ),
-
-                                  ),
-                                  child: const CustomText(text: "Sign Up", fontSize: 15),
+                                  icon: Icon(passwordObscured ? Icons.visibility_off : Icons.visibility, size: 20,)
                                 ),
+                                contentPadding: const EdgeInsets.symmetric(vertical: 5),
+                                label: const Text("Password", style: TextStyle(color: Colors.black)),
+                                enabledBorder: const UnderlineInputBorder(
+                                    borderSide: BorderSide(color: Colors.black)
+                                ),
+                                focusedBorder: const UnderlineInputBorder(
+                                    borderSide: BorderSide(color: Colors.black)
+                                ),
+                              ),
+                            ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                TextButton(
+                                  onPressed: () {},
+                                  child: const CustomText(text: "Forgot Password?", fontSize: 16,),
+                                ),
+                              ],
+                            ),
+                            Visibility(
+                              visible: errorVisible,
+                              child: CustomText(text: errorText, color: Colors.red),
+                            ),
+                            const SizedBox(height: 20),
+                            InkWell(
+                              onTap: () async {
+                                await login();
+                              },
+                              child: Container(
+                                height: 55,
+                                width: double.infinity,
+                                decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(30),
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      primaryColor,
+                                      secondaryColor
+                                    ]
+                                  )
+                                ),
+                                child: const Center(
+                                  child: CustomText(text: "SIGN IN", color: Colors.white, fontSize: 20),
+                                )
+                              ),
+                            ),
+                            const SizedBox(height: 30)
+                          ],
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              const CustomText(text: "Don't have an account?", fontSize: 16),
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.push(context, MaterialPageRoute(builder: (context) => const Register()));
+                                },
+                                style: ButtonStyle(
+                                  padding: WidgetStateProperty.all<EdgeInsetsGeometry>(
+                                    const EdgeInsets.symmetric(vertical: 0, horizontal: 0),
+                                  ),
+                                ),
+                                child: const CustomText(text: "Sign Up", fontSize: 17),
                               )
                             ],
                           ),
                         )
-                    )
+                      ],
+                    ),
+                  ),
                 ),
-              ],
-            ),
-            isLoading ? const Loader() : const SizedBox(height: 0)
-          ],
-        )
+              )
+            ],
+          ),
+          isLoading ? const Loader() : const SizedBox(height: 0)
+        ],
+      ),
     );
   }
 }

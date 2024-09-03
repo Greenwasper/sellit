@@ -10,10 +10,12 @@ import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:sellit/components/colors.dart';
+import 'package:sellit/components/custom_text.dart';
 import 'package:sellit/components/item.dart';
 import 'package:sellit/components/loader.dart';
 import 'package:sellit/components/marker_model.dart';
 import 'package:sellit/views/chat.dart';
+import 'package:sellit/views/profile.dart';
 import 'package:uuid/uuid.dart';
 
 import 'chatroom.dart';
@@ -44,6 +46,8 @@ class _HomeState extends State<Home> {
   List currentBuySnapshots = [];
   List currentSellSnapshots = [];
   Set<Marker> markers = {};
+  BitmapDescriptor? customBuyIcon;
+  BitmapDescriptor? customSellIcon;
 
   bool selling = false;
   bool buying = false;
@@ -85,6 +89,7 @@ class _HomeState extends State<Home> {
   void getUserInfo () async {
     DocumentSnapshot userInfoSnapshot = await _firestore.collection('users').doc(user.uid).get();
     userInfo = userInfoSnapshot.data() as Map;
+    print("User Info");
     print(userInfo);
 
     setState(() {
@@ -100,8 +105,20 @@ class _HomeState extends State<Home> {
     });
   }
 
-  void triggerLoading () {
+  Future<void> _loadCustomBuyMarker() async {
+    customBuyIcon = await BitmapDescriptor.asset(
+      const ImageConfiguration(size: Size(48, 48)),
+      'assets/marker-blue.png', // Path to the custom image asset
+    );
+    setState(() {});
+  }
 
+  Future<void> _loadCustomSellMarker() async {
+    customSellIcon = await BitmapDescriptor.asset(
+      const ImageConfiguration(size: Size(48, 48)),
+      'assets/marker-green.png', // Path to the custom image asset
+    );
+    setState(() {});
   }
 
   @override
@@ -111,6 +128,14 @@ class _HomeState extends State<Home> {
     getPastSellSnapshots();
     getUserInfo();
     getInitialPosition();
+    _loadCustomBuyMarker();
+    _loadCustomSellMarker();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _itemController.dispose();
   }
 
   @override
@@ -122,10 +147,13 @@ class _HomeState extends State<Home> {
       appBar: AppBar(
         toolbarHeight: 65,
         backgroundColor: homeColor,
+        title: const Text("Sell It", style: TextStyle(color: Colors.white)),
+        centerTitle: true,
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           IconButton(
             onPressed: () {
+              FocusScope.of(context).unfocus();
               Navigator.push(context, MaterialPageRoute(builder: (context) => const Chat()));
             },
             icon: const Icon(Icons.chat_bubble_outline),
@@ -260,6 +288,7 @@ class _HomeState extends State<Home> {
                     ),
                     pastSellSnapshots != null && pastBuySnapshots != null && userInfo != null ? ElevatedButton(
                       onPressed: () async {
+                        FocusScope.of(context).unfocus();
                         if(isLoading){return;}
 
                         setState(() {
@@ -346,23 +375,17 @@ class _HomeState extends State<Home> {
 
                         currentSellSnapshots = snapshot.data!.docs;
 
-                        print(pastSellSnapshots!.length);
-                        print(currentSellSnapshots.length);
-
-                        // print(snapshot.data!.docs[0].id);
-                        // print("Counter: $counter");
-
                         if(currentSellSnapshots.length > pastSellSnapshots!.length) {
-                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                          WidgetsBinding.instance.addPostFrameCallback((_) async {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text("${currentSellSnapshots.last['sellerName']} wants to sell ${currentSellSnapshots.last['name']}", style: TextStyle(color: Colors.black)),
+                                content: Text("${currentSellSnapshots.last['sellerName']} wants to sell ${currentSellSnapshots.last['name']}", style: TextStyle(color: Colors.grey.shade200)),
                                 dismissDirection: DismissDirection.down,
-                                backgroundColor: Colors.white,
+                                backgroundColor: dropdownGreen,
                                 behavior: SnackBarBehavior.floating,
                                 margin: EdgeInsets.only(bottom: MediaQuery.of(context).size.height-150, left: 10, right: 10),
                                 action: SnackBarAction(
-                                  textColor: Colors.blue,
+                                  textColor: Colors.white,
                                   label: 'OK',
                                   onPressed: () {
 
@@ -375,6 +398,10 @@ class _HomeState extends State<Home> {
                             context.read<MarkerModel>().addMarker(Marker(
                               position: LatLng(currentSellSnapshots.last['coordinates'][0], currentSellSnapshots.last['coordinates'][1]),
                               markerId: MarkerId(const Uuid().v4()),
+                              icon: await BitmapDescriptor.asset(
+                                const ImageConfiguration(size: Size(48, 48)),
+                                'assets/marker-green.png',
+                              ),
                               infoWindow: InfoWindow(
                                 title: currentSellSnapshots.last['name'],
                                 snippet: currentSellSnapshots.last['sellerName'] == '' ? "Tap to message ${currentSellSnapshots.last['buyerName']}" : "Tap to message ${currentSellSnapshots.last['sellerName']}",
@@ -390,29 +417,33 @@ class _HomeState extends State<Home> {
                             ));
                           });
                         } else {
-                          WidgetsBinding.instance.addPostFrameCallback((_) {
-                            context.read<MarkerModel>().emptyMarkers();
-                            Set<Marker> newMarkers = {};
-                            for(var currentSellSnapshot in currentSellSnapshots){
-                              newMarkers.add(Marker(
-                                position: LatLng(currentSellSnapshot['coordinates'][0], currentSellSnapshot['coordinates'][1]),
-                                markerId: MarkerId(const Uuid().v4()),
-                                infoWindow: InfoWindow(
-                                  title: currentSellSnapshot['name'],
-                                  snippet: currentSellSnapshot['sellerName'] == '' ? "Tap to message ${currentSellSnapshot['buyerName']}" : "Tap to message ${currentSellSnapshot['sellerName']}",
-                                  onTap: () {
-                                    print(currentSellSnapshot['sellerId'] == '' ? currentSellSnapshot['buyerId'] : currentSellSnapshot['sellerId']);
-                                    Navigator.push(context, MaterialPageRoute(builder: (context) => ChatRoom(
-                                        senderName: "${userInfo!['first_name']} ${userInfo!['last_name']}",
-                                        receiverId: currentSellSnapshot['sellerId'] == '' ? currentSellSnapshot['buyerId'] : currentSellSnapshot['sellerId'],
-                                        receiverName: currentSellSnapshot['sellerName'] == '' ? currentSellSnapshot['buyerName'] : currentSellSnapshot['sellerName']))
-                                    );
-                                  }
-                                ),
-                              ));
-                            }
-                            context.read<MarkerModel>().setMarkers(newMarkers);
-                          });
+                          // WidgetsBinding.instance.addPostFrameCallback((_) async {
+                          //   context.read<MarkerModel>().emptyMarkers();
+                          //   Set<Marker> newMarkers = {};
+                          //   for(var currentSellSnapshot in currentSellSnapshots){
+                          //     newMarkers.add(Marker(
+                          //       position: LatLng(currentSellSnapshot['coordinates'][0], currentSellSnapshot['coordinates'][1]),
+                          //       markerId: MarkerId(const Uuid().v4()),
+                          //       // icon: await BitmapDescriptor.asset(
+                          //       //   const ImageConfiguration(size: Size(48, 48)),
+                          //       //   'assets/marker-green.png',
+                          //       // ),
+                          //       infoWindow: InfoWindow(
+                          //         title: currentSellSnapshot['name'],
+                          //         snippet: currentSellSnapshot['sellerName'] == '' ? "Tap to message ${currentSellSnapshot['buyerName']}" : "Tap to message ${currentSellSnapshot['sellerName']}",
+                          //         onTap: () {
+                          //           print(currentSellSnapshot['sellerId'] == '' ? currentSellSnapshot['buyerId'] : currentSellSnapshot['sellerId']);
+                          //           Navigator.push(context, MaterialPageRoute(builder: (context) => ChatRoom(
+                          //               senderName: "${userInfo!['first_name']} ${userInfo!['last_name']}",
+                          //               receiverId: currentSellSnapshot['sellerId'] == '' ? currentSellSnapshot['buyerId'] : currentSellSnapshot['sellerId'],
+                          //               receiverName: currentSellSnapshot['sellerName'] == '' ? currentSellSnapshot['buyerName'] : currentSellSnapshot['sellerName']))
+                          //           );
+                          //         }
+                          //       ),
+                          //     ));
+                          //   }
+                          //   context.read<MarkerModel>().setMarkers(newMarkers);
+                          // });
                         }
 
                         pastSellSnapshots = currentSellSnapshots;
@@ -431,23 +462,17 @@ class _HomeState extends State<Home> {
 
                         currentBuySnapshots = snapshot.data!.docs;
 
-                        print(pastBuySnapshots!.length);
-                        print(currentBuySnapshots.length);
-
-                        // print(snapshot.data!.docs[0].id);
-                        // print("Counter: $counter");
-
                         if(currentBuySnapshots.length > pastBuySnapshots!.length) {
-                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                          WidgetsBinding.instance.addPostFrameCallback((_) async {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text("${currentBuySnapshots.last['buyerName']} wants to buy ${currentBuySnapshots.last['name']}", style: TextStyle(color: Colors.black)),
+                                content: Text("${currentBuySnapshots.last['buyerName']} wants to buy ${currentBuySnapshots.last['name']}", style: TextStyle(color: Colors.grey.shade200)),
                                 dismissDirection: DismissDirection.down,
-                                backgroundColor: Colors.white,
+                                backgroundColor: dropdownBlue,
                                 behavior: SnackBarBehavior.floating,
                                 margin: EdgeInsets.only(bottom: MediaQuery.of(context).size.height-150, left: 10, right: 10),
                                 action: SnackBarAction(
-                                  textColor: Colors.blue,
+                                  textColor: Colors.white,
                                   label: 'OK',
                                   onPressed: () {
 
@@ -456,6 +481,78 @@ class _HomeState extends State<Home> {
                                 duration: const Duration(seconds: 2),
                               ),
                             );
+
+                            context.read<MarkerModel>().addMarker(Marker(
+                              position: LatLng(currentBuySnapshots.last['coordinates'][0], currentBuySnapshots.last['coordinates'][1]),
+                              markerId: MarkerId(const Uuid().v4()),
+                              icon: await BitmapDescriptor.asset(
+                                const ImageConfiguration(size: Size(48, 48)),
+                                'assets/marker-blue.png',
+                              ),
+                              infoWindow: InfoWindow(
+                                  title: currentBuySnapshots.last['name'],
+                                  snippet: currentBuySnapshots.last['sellerName'] == '' ? "Tap to message ${currentBuySnapshots.last['buyerName']}" : "Tap to message ${currentBuySnapshots.last['sellerName']}",
+                                  onTap: () {
+                                    print(currentBuySnapshots.last['sellerId'] == '' ? currentBuySnapshots.last['buyerId'] : currentBuySnapshots.last['sellerId']);
+                                    Navigator.push(context, MaterialPageRoute(builder: (context) => ChatRoom(
+                                        senderName: "${userInfo!['first_name']} ${userInfo!['last_name']}",
+                                        receiverId: currentBuySnapshots.last['sellerId'] == '' ? currentBuySnapshots.last['buyerId'] : currentBuySnapshots.last['sellerId'],
+                                        receiverName: currentBuySnapshots.last['sellerName'] == '' ? currentBuySnapshots.last['buyerName'] : currentBuySnapshots.last['sellerName']))
+                                    );
+                                  }
+                              ),
+                            ));
+                          });
+                        } else {
+                          WidgetsBinding.instance.addPostFrameCallback((_) async {
+                            context.read<MarkerModel>().emptyMarkers();
+                            Set<Marker> newMarkers = {};
+                            for(var currentSellSnapshot in currentSellSnapshots){
+                              newMarkers.add(Marker(
+                                position: LatLng(currentSellSnapshot['coordinates'][0], currentSellSnapshot['coordinates'][1]),
+                                markerId: MarkerId(const Uuid().v4()),
+                                icon: await BitmapDescriptor.asset(
+                                  const ImageConfiguration(size: Size(48, 48)),
+                                  'assets/marker-green.png',
+                                ),
+                                infoWindow: InfoWindow(
+                                  title: currentSellSnapshot['name'],
+                                  snippet: currentSellSnapshot['sellerName'] == '' ? "Tap to message ${currentSellSnapshot['buyerName']}" : "Tap to message ${currentSellSnapshot['sellerName']}",
+                                  onTap: () {
+                                    print(currentSellSnapshot['sellerId'] == '' ? currentSellSnapshot['buyerId'] : currentSellSnapshot['sellerId']);
+                                    Navigator.push(context, MaterialPageRoute(builder: (context) => ChatRoom(
+                                        senderName: "${userInfo!['first_name']} ${userInfo!['last_name']}",
+                                        receiverId: currentSellSnapshot['sellerId'] == '' ? currentSellSnapshot['buyerId'] : currentSellSnapshot['sellerId'],
+                                        receiverName: currentSellSnapshot['sellerName'] == '' ? currentSellSnapshot['buyerName'] : currentSellSnapshot['sellerName']))
+                                    );
+                                  }
+                                ),
+                              ));
+                            }
+                            for(var currentSellSnapshot in currentBuySnapshots){
+                              newMarkers.add(Marker(
+                                position: LatLng(currentSellSnapshot['coordinates'][0], currentSellSnapshot['coordinates'][1]),
+                                markerId: MarkerId(const Uuid().v4()),
+                                icon: await BitmapDescriptor.asset(
+                                  const ImageConfiguration(size: Size(48, 48)),
+                                  'assets/marker-blue.png',
+                                ),
+                                infoWindow: InfoWindow(
+                                  title: currentSellSnapshot['name'],
+                                  snippet: currentSellSnapshot['sellerName'] == '' ? "Tap to message ${currentSellSnapshot['buyerName']}" : "Tap to message ${currentSellSnapshot['sellerName']}",
+                                  onTap: () {
+                                    print(currentSellSnapshot['sellerId'] == '' ? currentSellSnapshot['buyerId'] : currentSellSnapshot['sellerId']);
+                                    Navigator.push(context, MaterialPageRoute(builder: (context) => ChatRoom(
+                                        senderName: "${userInfo!['first_name']} ${userInfo!['last_name']}",
+                                        receiverId: currentSellSnapshot['sellerId'] == '' ? currentSellSnapshot['buyerId'] : currentSellSnapshot['sellerId'],
+                                        receiverName: currentSellSnapshot['sellerName'] == '' ? currentSellSnapshot['buyerName'] : currentSellSnapshot['sellerName']))
+                                    );
+                                  }
+                                ),
+                              ));
+                            }
+
+                            context.read<MarkerModel>().setMarkers(newMarkers);
                           });
                         }
 
@@ -476,34 +573,62 @@ class _HomeState extends State<Home> {
         child: ListView(
           padding: EdgeInsets.zero,
           children: <Widget>[
-            DrawerHeader(
+            Container(
+              height: 250,
               decoration: BoxDecoration(
-                color: Colors.blue,
+                gradient: LinearGradient(
+                  colors: [
+                    primaryColor,
+                    secondaryColor
+                  ]
+                )
               ),
-              child: Text(
-                'Drawer Header',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
+              child: SafeArea(
+                child: Center(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Image.asset('assets/sellit.png', width: 100),
+                      const SizedBox(height: 15),
+                      const Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          CustomText(text: "Sell It", fontSize: 30, color: Colors.white),
+                          // CustomText(text: "+233545548038"),
+                          // CustomText(text: "banyanful@gmail.com"),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
             ListTile(
-              title: Text('Item 1'),
+              leading: const Icon(Icons.question_mark),
+              title: const Text('About'),
               onTap: () {
-                // Handle item 1 tap
-                Navigator.pop(context); // Close the drawer
+                Navigator.pop(context);
               },
             ),
             ListTile(
-              title: Text('Item 2'),
+              leading: const Icon(Icons.person),
+              title: const Text('Profile'),
               onTap: () {
-                // Handle item 2 tap
-                Navigator.pop(context); // Close the drawer
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const Profile()));
               },
             ),
             ListTile(
-              title: Text('Log Out'),
+              leading: const Icon(Icons.settings),
+              title: const Text('Settings'),
+              onTap: () {
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.logout),
+              title: const Text('Log Out'),
               onTap: () async {
                 await FirebaseAuth.instance.signOut();
                 Navigator.pop(context);

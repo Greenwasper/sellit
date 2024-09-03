@@ -103,7 +103,7 @@ class _ChatRoomState extends State<ChatRoom> {
       body: Container(
         decoration: const BoxDecoration(
           image: DecorationImage(
-            opacity: 0.2,
+            opacity: 1,
             image: AssetImage('assets/chat_wallpaper.webp'),
             fit: BoxFit.cover
           )

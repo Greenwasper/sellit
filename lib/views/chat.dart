@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:sellit/components/loader.dart';
 
+import '../components/colors.dart';
 import '../components/custom_text.dart';
 import 'chatroom.dart';
 
@@ -49,7 +50,22 @@ class _ChatState extends State<Chat> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Chats"),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                primaryColor,
+                secondaryColor
+              ]
+            )
+          ),
+        ),
+        title: const Text("Chats", style: TextStyle(color: Colors.white)),
+        centerTitle: true,
+        iconTheme: const IconThemeData(
+          color: Colors.white, // Change the drawer icon color to white
+        ),
+        elevation: 0,
       ),
       body: chatRoomList != null && userInfo != null ? StreamBuilder(
         stream: FirebaseFirestore.instance.collection('chatRoomList').snapshots(),

@@ -4,7 +4,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 class MarkerModel extends ChangeNotifier {
   Set<Marker> markers = {};
 
-  void addMarker (Marker m){
+  void addMarker (Marker m) {
     markers.add(m);
     notifyListeners();
   }
